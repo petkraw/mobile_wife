@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phantom Wallet Integration</title>
+    <title>Phantom Wallet Integration with Deeplink</title>
     <script src="https://unpkg.com/@solana/web3.js@1.83.0/lib/index.iife.min.js"></script>
     <style>
         body {
@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-    <h1>Hallo David, willkommen auf der hidden content website von wife</h1>
+    <h1>Welcome to the Hidden Content Platform</h1>
     <button id="connectWallet">Connect Phantom Wallet</button>
 
     <div id="hiddenContent">
@@ -40,16 +40,29 @@
     </div>
 
     <script>
-        const connectWalletButton = document.getElementById('connectWallet');
+        const PHANTOM_DEEPLINK = "https://phantom.app/ul/connect";
+        const APP_URL = encodeURIComponent(window.location.href); // Current URL of your app
+
+        document.getElementById('connectWallet').addEventListener('click', () => {
+            // Generate the Deeplink URL
+            const deeplinkUrl = `${PHANTOM_DEEPLINK}?app_url=${APP_URL}`;
+            
+            // Redirect to Phantom Wallet App
+            window.location.href = deeplinkUrl;
+        });
+
+        // Optional: Listen for messages from Phantom Wallet (if supported in the future)
+        window.addEventListener('message', (event) => {
+            if (event.origin === 'https://phantom.app') {
+                console.log('Phantom Wallet connected:', event.data);
+            }
+        });
+
         const hiddenContent = document.getElementById('hiddenContent');
         const jokeElement = document.getElementById('joke');
         const loadJokeButton = document.getElementById('loadJoke');
 
-        let walletAddress = null;
-        const requiredTokenAmount = 100;
-        const tokenMintAddress = "4y3oUrsJfSp431R3wJrWiaLxRPsnYtpkVJmoV2bYpBiy";
-
-        // Function to fetch jokes from the text file
+        // Function to fetch jokes from a text file
         async function fetchJokes() {
             try {
                 const response = await fetch('jokes.txt'); // Replace with your file path
@@ -72,52 +85,7 @@
             }
         }
 
-        connectWalletButton.addEventListener('click', async () => {
-            if (window.solana && window.solana.isPhantom) {
-                try {
-                    const response = await window.solana.connect();
-                    walletAddress = response.publicKey.toString();
-
-                    const balance = await checkTokenBalance(walletAddress, tokenMintAddress);
-                    if (balance >= requiredTokenAmount) {
-                        hiddenContent.style.display = 'block';
-                        await displayRandomJoke();
-                    } else {
-                        alert('You do not have enough tokens to access the hidden content.');
-                    }
-                } catch (error) {
-                    console.error('Error during connection or token check:', error);
-                }
-            } else {
-                alert('Phantom Wallet not found! Please install it.');
-            }
-        });
-
         loadJokeButton.addEventListener('click', displayRandomJoke);
-
-        async function checkTokenBalance(walletAddress, tokenMintAddress) {
-            const quickNodeUrl = 'https://tame-nameless-sailboat.solana-mainnet.quiknode.pro/98a9c00d7a4c176253e1fc6bb61dde0ea06ba8c9';
-            const connection = new solanaWeb3.Connection(quickNodeUrl);
-            const walletPublicKey = new solanaWeb3.PublicKey(walletAddress);
-            const tokenPublicKey = new solanaWeb3.PublicKey(tokenMintAddress);
-
-            try {
-                const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-                    walletPublicKey,
-                    { mint: tokenPublicKey }
-                );
-
-                if (tokenAccounts.value.length > 0) {
-                    const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-                    return balance;
-                } else {
-                    return 0;
-                }
-            } catch (error) {
-                console.error('Error fetching token accounts:', error);
-                return 0;
-            }
-        }
     </script>
 </body>
 </html>
