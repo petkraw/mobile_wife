@@ -42,6 +42,8 @@
     <script>
         const PHANTOM_DEEPLINK = "https://phantom.app/ul/connect";
         const APP_URL = encodeURIComponent(window.location.href); // Current URL of your app
+        const TOKEN_MINT = "4y3oUrsJfSp431R3wJrWiaLxRPsnYtpkVJmoV2bYpBiy";
+        const REQUIRED_TOKENS = 100; // Set the minimum token requirement
 
         document.getElementById('connectWallet').addEventListener('click', () => {
             // Generate the Deeplink URL
@@ -55,6 +57,7 @@
         window.addEventListener('message', (event) => {
             if (event.origin === 'https://phantom.app') {
                 console.log('Phantom Wallet connected:', event.data);
+                checkTokenBalance(event.data.publicKey);
             }
         });
 
@@ -86,6 +89,30 @@
         }
 
         loadJokeButton.addEventListener('click', displayRandomJoke);
+
+        // Function to check token balance
+        async function checkTokenBalance(walletAddress) {
+            try {
+                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+                const publicKey = new solanaWeb3.PublicKey(walletAddress);
+                const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: new solanaWeb3.PublicKey(TOKEN_MINT) });
+
+                let balance = 0;
+                tokenAccounts.value.forEach(account => {
+                    balance += account.account.data.parsed.info.tokenAmount.uiAmount;
+                });
+
+                if (balance > REQUIRED_TOKENS) {
+                    hiddenContent.style.display = 'block';
+                    displayRandomJoke();
+                } else {
+                    alert('Insufficient tokens to view the content!');
+                }
+            } catch (error) {
+                console.error('Error checking token balance:', error);
+                alert('Unable to verify token balance.');
+            }
+        }
     </script>
 </body>
 </html>
